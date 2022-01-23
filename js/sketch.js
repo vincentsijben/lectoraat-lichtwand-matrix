@@ -1,7 +1,9 @@
 
-let resolutionX = 10; //horizontal size of the installation in large pixels
-let resolutionY = 10; //vertical size of the installation in large pixels
-let widthScreen = 600; //width of the software window
+let resolutionX = 8; //horizontal size of the installation in large pixels
+let resolutionY = 8; //vertical size of the installation in large pixels
+// resolutionX = 10;
+// resolutionY = 10;
+let widthScreen = 800; //width of the software window
 let img;
 let lightWarm;
 let lightCold;
@@ -23,6 +25,7 @@ let showMarquee = false;
 let pg;
 let textPosX;
 let marqueeText;
+let arduinoText = "";
 
 function preload() {
   img = loadImage("img/test.png");
@@ -56,7 +59,7 @@ function setup() {
 
   loadPixels();
 
-  background(240);
+  
 
   checkbox = createCheckbox('snakeOrder', false);
   checkbox.changed(changeSnakeOrder);
@@ -114,26 +117,26 @@ function gotFile(file) {
 
 function draw() {
 
-  if (showWebcam) {
-    image(capture, 0, 0, width, height);
-    loadPixels();
-  } 
-  if (showImage) {
-    image(img, 0, 0, width, height);
-    loadPixels();
-  }
-  if (showMarquee) {
-    pg.background(200);
-    pg.noStroke();
-    pg.textSize(widthScreen);
-    pg.textAlign(LEFT, CENTER);
-    pg.textStyle(BOLD)
-    pg.text(marqueeText, textPosX, height / 2);
-    textPosX -= widthScreen / 30;
-    if (textPosX < -pg.textWidth(marqueeText)) textPosX = width;
-    image(pg, 0, 0);
-    loadPixels();
-  }
+  // if (showWebcam) {
+  //   image(capture, 0, 0, width, height);
+  //   loadPixels();
+  // } 
+  // if (showImage) {
+  //   image(img, 0, 0, width, height);
+  //   // loadPixels();
+  // }
+  // if (showMarquee) {
+  //   pg.background(200);
+  //   pg.noStroke();
+  //   pg.textSize(widthScreen);
+  //   pg.textAlign(LEFT, CENTER);
+  //   pg.textStyle(BOLD)
+  //   pg.text(marqueeText, textPosX, height / 2);
+  //   textPosX -= widthScreen / 30;
+  //   if (textPosX < -pg.textWidth(marqueeText)) textPosX = width;
+  //   image(pg, 0, 0);
+  //   loadPixels();
+  // }
 
   renderImage();
   
@@ -143,6 +146,7 @@ function draw() {
 
 function renderImage() {
   pixelCounter = 0;
+  arduinoText = "";
   msg = [];
 
 
@@ -172,6 +176,7 @@ function renderImage() {
 
       //use the center of each part to determine the color
       let index = (xCenter + yCenter * width) * 4;
+      print(index);
 
       let r = pixels[index + 0];
       let g = pixels[index + 1];
@@ -223,18 +228,23 @@ function renderImage() {
       line(0, height - 1, width, height - 1);
       pop();
 
-      
 
-      msg.push({
-        order: orderNumber,
-        warm: red(c),
-        cold: 2
-      })
+      // msg.push({
+      //   order: orderNumber,
+      //   warm: `${red(c)},${green(c)},${blue(c)}`,
+      //   cold: 2
+      // })
+      
+      // testing for arduino code:
+      if (red(c)==255 && green(c)==255 && blue(c) ==255) c = color(0,0,0);
+      arduinoText += `myObj[${orderNumber-1}].order = ${orderNumber};myObj[${orderNumber-1}].r = ${red(c)};myObj[${orderNumber-1}].g = ${green(c)};myObj[${orderNumber-1}].b = ${blue(c)};\n`
+            
 
     }
   }
 
-  saveValues(msg)
+  // saveValues(msg)
+  document.querySelector("#output").innerText = arduinoText;
 }
 
 
@@ -252,6 +262,7 @@ function saveValues(obj){
 
   obj.sort( compare );
   document.querySelector("#output").innerText = JSON.stringify(obj, null, 4);
+  //httpGet("http://127.0.0.1/26/on");
 }
 
 
