@@ -1,7 +1,7 @@
 
 let resolutionX = 10; //horizontal size of the installation in large pixels
 let resolutionY = 10; //vertical size of the installation in large pixels
-let widthScreen = 800; //width of the software window
+let widthScreen = 600; //width of the software window
 let img;
 let lightWarm;
 let lightCold;
@@ -13,12 +13,16 @@ let pixelCounter = 0;
 let toggleOrder = false;
 let lightVersions = ["RGB", "WarmCold", "OnOff"];
 let lightVersion = lightVersions[0];
-let checkbox, checkbox2;
+let checkbox, checkbox2, checkbox3, checkbox4, checkbox5, input;
 let snakeOrder = false;
 let orderDirection = "horizontal"
 let showImage = false;
 let capture;
 let showWebcam = false;
+let showMarquee = false;
+let pg;
+let textPosX;
+let marqueeText;
 
 function preload() {
   img = loadImage("img/test.png");
@@ -43,6 +47,7 @@ function setup() {
     h = widthScreen;
   }
   const c = createCanvas(w, h);
+  c.parent("mycanvas");
   c.drop(gotFile);
   print(width, height);
 
@@ -59,11 +64,33 @@ function setup() {
   checkbox2 = createCheckbox('orderDirection', false);
   checkbox2.changed(changeOrderDirection);
 
-  checkbox3 = createCheckbox('toggleImage', false);
+  checkbox3 = createCheckbox('toggleImage', true);
+  checkbox3.id("toggleImage");
   checkbox3.changed(toggleImage);
 
   checkbox4 = createCheckbox('toggleWebcam', false);
+  checkbox4.id("toggleWebcam");
   checkbox4.changed(toggleWebcam);
+
+  input = createInput('put your text here');
+  input.size(200);
+  input.input(inputMarquee);
+
+  checkbox5 = createCheckbox('toggleMarquee', false);
+  checkbox5.id("toggleMarquee");
+  checkbox5.changed(toggleMarquee);
+
+  h2 = createElement('h2', 'Output:');
+  pre = createElement('pre', '');
+  pre.id("output");
+  pre.style('border','1px solid gray');
+  pre.style('padding','10px');
+  
+  
+  textPosX = width;
+  pg = createGraphics(width, height);
+
+
 
   noLoop();
 
@@ -90,76 +117,33 @@ function draw() {
   if (showWebcam) {
     image(capture, 0, 0, width, height);
     loadPixels();
-  } else {
+  } 
+  if (showImage) {
     image(img, 0, 0, width, height);
+    loadPixels();
+  }
+  if (showMarquee) {
+    pg.background(200);
+    pg.noStroke();
+    pg.textSize(widthScreen);
+    pg.textAlign(LEFT, CENTER);
+    pg.textStyle(BOLD)
+    pg.text(marqueeText, textPosX, height / 2);
+    textPosX -= widthScreen / 30;
+    if (textPosX < -pg.textWidth(marqueeText)) textPosX = width;
+    image(pg, 0, 0);
     loadPixels();
   }
 
   renderImage();
+  
 
-}
-
-
-function toggleWebcam(event) {
-  let label = document.querySelector(`label[for="${event.target.id}"]`);
-  if (this.checked()) {
-    showWebcam = true;
-    label.innerText = "toggleWebcam: show"
-
-    capture = createCapture(VIDEO);
-    capture.size(width, height);
-    capture.hide();
-    loop();
-
-  } else {
-    capture = null;
-    showWebcam = false;
-    label.innerText = "toggleWebcam: hide"
-    noLoop();
-  }
-  renderImage();
-}
-
-function toggleImage(event) {
-  let label = document.querySelector(`label[for="${event.target.id}"]`);
-  if (this.checked()) {
-    showImage = true;
-    label.innerText = "toggleImage: show"
-  } else {
-    showImage = false;
-    label.innerText = "toggleImage: hide"
-  }
-  renderImage();
-}
-
-function changeSnakeOrder(event) {
-  let label = document.querySelector(`label[for="${event.target.id}"]`);
-  if (this.checked()) {
-    snakeOrder = true;
-    label.innerText = "snakeOrder: true"
-  } else {
-    snakeOrder = false;
-    label.innerText = "snakeOrder: false"
-  }
-  renderImage();
-}
-
-function changeOrderDirection(event) {
-  let label = document.querySelector(`label[for="${event.target.id}"]`);
-  if (this.checked()) {
-    orderDirection = "horizontal";
-    label.innerText = "orderDirection: horizontal"
-  } else {
-    orderDirection = "vertical";
-    label.innerText = "orderDirection: vertical"
-  }
-  renderImage();
 }
 
 
 function renderImage() {
   pixelCounter = 0;
-  // msg = [];
+  msg = [];
 
 
   let iStep, jStep, iMax, jMax;
@@ -196,8 +180,9 @@ function renderImage() {
       let c = color(r, g, b, a);
 
       fill(c);
-      if (showImage) image(img, 0, 0, width, height)
-      else rect(x, y, width / resolutionX, height / resolutionY);
+      // if (showImage) image(img, 0, 0, width, height)
+      // else 
+      rect(x, y, width / resolutionX, height / resolutionY);
 
       orderNumber = pixelCounter;
       if (snakeOrder) {
@@ -238,6 +223,47 @@ function renderImage() {
       line(0, height - 1, width, height - 1);
       pop();
 
+      
+
+      msg.push({
+        order: orderNumber,
+        warm: red(c),
+        cold: 2
+      })
+
+    }
+  }
+
+  saveValues(msg)
+}
+
+
+function saveValues(obj){
+
+  function compare( a, b ) {
+    if ( a.order < b.order ){
+      return -1;
+    }
+    if ( a.order > b.order ){
+      return 1;
+    }
+    return 0;
+  }
+
+  obj.sort( compare );
+  document.querySelector("#output").innerText = JSON.stringify(obj, null, 4);
+}
+
+
+
+
+
+
+
+
+
+
+
       // if (lightVersion === "RGB") {
       //   //fill(hue(c), saturation(c), lightness(c));
       //   fill(c);
@@ -256,31 +282,101 @@ function renderImage() {
 
 
 
-      // msg.push({
-      //   order: pixelCounter,
-      //   warm: int(map(percentageWarm, 0, 100, 0, 50)),
-      //   cold: int(map(percentageCold, 0, 360, 0, 50))
-      // })
 
 
-    }
-  }
+function inputMarquee(event) {
+  marqueeText = this.value();
 }
 
+function toggleMarquee(event) {
+  
 
+  marqueeText = input.value();
+    
+  let label = document.querySelector(`label[for="${event.target.id}"]`);
+  if (this.checked()) {
 
-// function sendValues() {
+    let image = document.querySelector(`#toggleImage input`);
+    let webcam = document.querySelector(`#toggleWebcam input`);
+    if (image.checked) image.click();
+    if (webcam.checked) webcam.click();
 
-//   if (lightVersion === "RGB") {
+    showMarquee = true;
+    label.innerText = "toggleMarquee: show"
+  } else {
+    showMarquee = false;
+    label.innerText = "toggleMarquee: hide"
+  }
 
-//   }
-//   if (lightVersion === "WarmCold") {
+  loop();
+  renderImage();
+}
 
-//   }
+function toggleWebcam(event) {
+  let label = document.querySelector(`label[for="${event.target.id}"]`);
+  if (this.checked()) {
 
-//   if (lightVersion === "OnOff") {
+    let image = document.querySelector(`#toggleImage input`);
+    let marquee = document.querySelector(`#toggleMarquee input`);
+    if (image.checked) image.click();
+    if (marquee.checked) marquee.click();
 
-//   }
+    showWebcam = true;
+    label.innerText = "toggleWebcam: show"
 
-//   console.log(msg);
-// }
+    capture = createCapture(VIDEO);
+    capture.size(width, height);
+    capture.hide();
+    loop();
+
+  } else {
+    capture = null;
+    showWebcam = false;
+    label.innerText = "toggleWebcam: hide"
+    noLoop();
+  }
+  renderImage();
+}
+
+function toggleImage(event) {
+  let label = document.querySelector(`label[for="${event.target.id}"]`);
+  if (this.checked()) {
+
+    let webcam = document.querySelector(`#toggleWebcam input`);
+    let marquee = document.querySelector(`#toggleMarquee input`);
+    if (webcam.checked) webcam.click();
+    if (marquee.checked) marquee.click();
+    
+    
+    showImage = true;
+    label.innerText = "toggleImage: show"
+  } else {
+    showImage = false;
+    label.innerText = "toggleImage: hide"
+  }
+  renderImage();
+}
+
+function changeSnakeOrder(event) {
+  let label = document.querySelector(`label[for="${event.target.id}"]`);
+  if (this.checked()) {
+    snakeOrder = true;
+    label.innerText = "snakeOrder: true"
+  } else {
+    snakeOrder = false;
+    label.innerText = "snakeOrder: false"
+  }
+  renderImage();
+}
+
+function changeOrderDirection(event) {
+  let label = document.querySelector(`label[for="${event.target.id}"]`);
+  if (this.checked()) {
+    orderDirection = "horizontal";
+    label.innerText = "orderDirection: horizontal"
+  } else {
+    orderDirection = "vertical";
+    label.innerText = "orderDirection: vertical"
+  }
+  renderImage();
+}
