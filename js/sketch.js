@@ -1,18 +1,3 @@
-/*
-
-Todo:
-- must have: use 2 8bit colors for controlling both a warm and cold LED
-- nice to have: For the rgb leds, add the tweakers library functionality
-- nice to have: change order by manually clicking the canvas
-- nice to have: add motion, so very quickly send all the data as http requests
-
-Notes:
-- By default, the noLoop() is set, so every time the user interacts, everything is recalculated. That is
-  much more performant as to do this 60 fps.
-- You can drag 'n drop images to the canvas.
-
-*/
-
 
 let resolutionX = 10; //horizontal size of the installation in large pixels
 let resolutionY = 10; //vertical size of the installation in large pixels
