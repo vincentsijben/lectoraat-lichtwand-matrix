@@ -9,7 +9,7 @@ Todo:
 Notes:
 - By default, the noLoop() is set, so every time the user interacts, everything is recalculated. That is
   much more performant as to do this 60 fps.
-- Use the webcam for pixelation by setting variable showWebcam to true;
+- You can drag 'n drop images to the canvas.
 
 */
 
@@ -47,17 +47,23 @@ function setup() {
   lightCold = color(225, 100, 50); //50 us full cold light, 0 is no cold light
 
   let aspectRatio = resolutionX / resolutionY;
+  let w, h;
   if (aspectRatio > 1) {
     //its a landscape installation, eg. 8x4
-    createCanvas(widthScreen, floor(widthScreen / aspectRatio));
+    w = widthScreen;
+    h = floor(widthScreen / aspectRatio);
   } else {
     //its a portrait installation, eg 4x8
-    createCanvas(floor(widthScreen * aspectRatio), widthScreen);
+    w = floor(widthScreen * aspectRatio);
+    h = widthScreen;
   }
+  const c = createCanvas(w, h);
+  c.drop(gotFile);
   print(width, height);
 
   pixelDensity(1);
   image(img, 0, 0, width, height);
+
   loadPixels();
 
   background(240);
@@ -71,26 +77,62 @@ function setup() {
   checkbox3 = createCheckbox('toggleImage', false);
   checkbox3.changed(toggleImage);
 
+  checkbox4 = createCheckbox('toggleWebcam', false);
+  checkbox4.changed(toggleWebcam);
+
   noLoop();
-  if (showWebcam) {
-    capture = createCapture(VIDEO);
-    capture.size(width, height);
-    capture.hide();
-    loop();
-  }
-  
+
+
 }
 
+function gotFile(file) {
+  // If it's an image file
+  if (file.type === 'image') {
+    // Create an image DOM element but don't show it
+    img = createImg(file.data).hide();
+    image(img, 0, 0, width, height);
+    // updatePixels();
+    // Draw the image onto the canvas
+
+    loop();
+  } else {
+    console.log('Not an image file!');
+  }
+}
 
 function draw() {
 
   if (showWebcam) {
     image(capture, 0, 0, width, height);
     loadPixels();
+  } else {
+    image(img, 0, 0, width, height);
+    loadPixels();
   }
 
   renderImage();
 
+}
+
+
+function toggleWebcam(event) {
+  let label = document.querySelector(`label[for="${event.target.id}"]`);
+  if (this.checked()) {
+    showWebcam = true;
+    label.innerText = "toggleWebcam: show"
+
+    capture = createCapture(VIDEO);
+    capture.size(width, height);
+    capture.hide();
+    loop();
+
+  } else {
+    capture = null;
+    showWebcam = false;
+    label.innerText = "toggleWebcam: hide"
+    noLoop();
+  }
+  renderImage();
 }
 
 function toggleImage(event) {
