@@ -1,10 +1,7 @@
 
-let resolutionX = 11; //horizontal size of the installation in large pixels
+let resolutionX = 8; //horizontal size of the installation in large pixels
 let resolutionY = 8; //vertical size of the installation in large pixels
-// resolutionX = 10;
-// resolutionY = 10;
-let widthScreen = 1100; //width of the software window
-console.log(widthScreen/resolutionX)
+let widthScreen = 800; //width of the software window
 let img;
 let lightWarm;
 let lightCold;
@@ -50,7 +47,6 @@ function setup() {
     w = floor(widthScreen * aspectRatio);
     h = widthScreen;
   }
-  console.log(w,h);
   const c = createCanvas(w, h);
   
   c.parent("mycanvas");
@@ -172,7 +168,7 @@ function renderImage() {
 
       let x, y, xCenter, yCenter;
 
-      if (orderDirection === "horizontal") { x = j; y = i; xCenter = j + jStep / 2; yCenter = i + iStep / 2; }
+      if (orderDirection === "horizontal") { x = j; y = i; xCenter = j + int(jStep / 2); yCenter = i + int(iStep / 2); }
       if (orderDirection === "vertical") { x = i; y = j; xCenter = i + iStep / 2; yCenter = j + jStep / 2; }
 
       pixelCounter++;
