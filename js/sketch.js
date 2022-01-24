@@ -1,9 +1,10 @@
 
-let resolutionX = 8; //horizontal size of the installation in large pixels
+let resolutionX = 11; //horizontal size of the installation in large pixels
 let resolutionY = 8; //vertical size of the installation in large pixels
 // resolutionX = 10;
 // resolutionY = 10;
-let widthScreen = 800; //width of the software window
+let widthScreen = 1100; //width of the software window
+console.log(widthScreen/resolutionX)
 let img;
 let lightWarm;
 let lightCold;
@@ -35,8 +36,8 @@ function preload() {
 function setup() {
 
   //colorMode(HSL, 360, 100, 100);
-  lightWarm = color(28, 100, 50); //50 is full warm light, 0 is no warm light
-  lightCold = color(225, 100, 50); //50 us full cold light, 0 is no cold light
+  // lightWarm = color(28, 100, 50); //50 is full warm light, 0 is no warm light
+  // lightCold = color(225, 100, 50); //50 us full cold light, 0 is no cold light
 
   let aspectRatio = resolutionX / resolutionY;
   let w, h;
@@ -49,10 +50,12 @@ function setup() {
     w = floor(widthScreen * aspectRatio);
     h = widthScreen;
   }
+  console.log(w,h);
   const c = createCanvas(w, h);
+  
   c.parent("mycanvas");
   c.drop(gotFile);
-  print(width, height);
+
 
   pixelDensity(1);
   image(img, 0, 0, width, height);
@@ -117,26 +120,26 @@ function gotFile(file) {
 
 function draw() {
 
-  // if (showWebcam) {
-  //   image(capture, 0, 0, width, height);
-  //   loadPixels();
-  // } 
-  // if (showImage) {
-  //   image(img, 0, 0, width, height);
-  //   // loadPixels();
-  // }
-  // if (showMarquee) {
-  //   pg.background(200);
-  //   pg.noStroke();
-  //   pg.textSize(widthScreen);
-  //   pg.textAlign(LEFT, CENTER);
-  //   pg.textStyle(BOLD)
-  //   pg.text(marqueeText, textPosX, height / 2);
-  //   textPosX -= widthScreen / 30;
-  //   if (textPosX < -pg.textWidth(marqueeText)) textPosX = width;
-  //   image(pg, 0, 0);
-  //   loadPixels();
-  // }
+  if (showWebcam) {
+    image(capture, 0, 0, width, height);
+    loadPixels();
+  } 
+  if (showImage) {
+    image(img, 0, 0, width, height);
+    loadPixels();
+  }
+  if (showMarquee) {
+    pg.background(200);
+    pg.noStroke();
+    pg.textSize(widthScreen);
+    pg.textAlign(LEFT, CENTER);
+    pg.textStyle(BOLD)
+    pg.text(marqueeText, textPosX, height / 2);
+    textPosX -= widthScreen / 30;
+    if (textPosX < -pg.textWidth(marqueeText)) textPosX = width;
+    image(pg, 0, 0);
+    loadPixels();
+  }
 
   renderImage();
   
@@ -176,7 +179,6 @@ function renderImage() {
 
       //use the center of each part to determine the color
       let index = (xCenter + yCenter * width) * 4;
-      print(index);
 
       let r = pixels[index + 0];
       let g = pixels[index + 1];
@@ -185,8 +187,6 @@ function renderImage() {
       let c = color(r, g, b, a);
 
       fill(c);
-      // if (showImage) image(img, 0, 0, width, height)
-      // else 
       rect(x, y, width / resolutionX, height / resolutionY);
 
       orderNumber = pixelCounter;
