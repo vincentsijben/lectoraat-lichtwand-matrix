@@ -1,3 +1,8 @@
+let serial;
+let portName = "/dev/cu.usbmodem143101";
+let textXpos = 10;
+let toggle = true;
+
 
 let resolutionX = 8; //horizontal size of the installation in large pixels
 let resolutionY = 8; //vertical size of the installation in large pixels
@@ -13,7 +18,7 @@ let pixelCounter = 0;
 let toggleOrder = false;
 let lightVersions = ["RGB", "WarmCold", "OnOff"];
 let lightVersion = lightVersions[0];
-let checkbox, checkbox2, checkbox3, checkbox4, checkbox5, input;
+let button, checkbox, checkbox2, checkbox3, checkbox4, checkbox5, input;
 let snakeOrder = false;
 let orderDirection = "horizontal"
 let showImage = false;
@@ -24,13 +29,31 @@ let pg;
 let textPosX;
 let marqueeText;
 let arduinoText = "";
+let arduinoTextCompact = "";
 
 function preload() {
   img = loadImage("img/test.png");
-  // img = loadImage("img/spaceinvaders.jpg");
+  //img = loadImage("img/spaceinvaders.jpg");
 }
 
 function setup() {
+
+  // make an instance of the SerialPort object
+  serial = new p5.SerialPort();
+
+  // Get a list the ports available
+  // You should have a callback defined to see the results. See gotList, below:
+  serial.list();
+
+  // Assuming our Arduino is connected,  open the connection to it
+  // serial.open(portName, {baudrate: 19200});
+  serial.open(portName, { baudRate: 9600 }, onOpen)
+
+  // When you get a list of serial ports that are available
+  serial.on('list', gotList);
+
+  // When you some data from the serial port
+  serial.on('data', gotData);
 
   //colorMode(HSL, 360, 100, 100);
   // lightWarm = color(28, 100, 50); //50 is full warm light, 0 is no warm light
@@ -48,17 +71,17 @@ function setup() {
     h = widthScreen;
   }
   const c = createCanvas(w, h);
-  
+
   c.parent("mycanvas");
   c.drop(gotFile);
 
 
   pixelDensity(1);
   image(img, 0, 0, width, height);
-
+  frameRate(2);
   loadPixels();
 
-  
+
 
   checkbox = createCheckbox('snakeOrder', false);
   checkbox.changed(changeSnakeOrder);
@@ -82,13 +105,19 @@ function setup() {
   checkbox5.id("toggleMarquee");
   checkbox5.changed(toggleMarquee);
 
+  button = createButton('send: rainbow');
+  button.position(0, 0);
+  button.id("btn")
+  button.mousePressed(sendToArduino);
+
   h2 = createElement('h2', 'Output:');
   pre = createElement('pre', '');
   pre.id("output");
-  pre.style('border','1px solid gray');
-  pre.style('padding','10px');
-  
-  
+  pre.style('border', '1px solid gray');
+  pre.style('padding', '10px');
+
+
+
   textPosX = width;
   pg = createGraphics(width, height);
 
@@ -97,6 +126,42 @@ function setup() {
   noLoop();
 
 
+}
+
+function onOpen() {
+  console.log("open connection!")
+}
+
+function sendToArduino() {
+
+  // serial.write("lampje:" + mouseX);
+
+  // serial.write("ABCDEF");
+  let btn = document.querySelector(`button#btn`);
+  if (toggle) {
+    // for (let i = 0; i < 1000; i++) {
+    //   serial.write(`${i},`);
+    // }
+    // serial.write(`
+    // myObj[0].order = 1;
+    // myObj[0].r = 0;
+    // myObj[0].g = 0;
+    // myObj[0].b = 0;
+    // `);
+    serial.write(`255;0;0
+255;255;0
+`);
+    //serial.write("AAAAAAAAAA");
+    btn.innerText = "send: strobe"
+  }
+  else {
+    // serial.write("B");
+    serial.write(`0;255;0
+255;100;50
+`);
+    btn.innerText = "send: rainbow"
+  }
+  toggle = !toggle;
 }
 
 function gotFile(file) {
@@ -116,20 +181,23 @@ function gotFile(file) {
 
 function draw() {
 
+  console.log(textXpos);
+
   if (showWebcam) {
     image(capture, 0, 0, width, height);
     loadPixels();
-  } 
+  }
   if (showImage) {
     image(img, 0, 0, width, height);
     loadPixels();
   }
   if (showMarquee) {
-    pg.background(200);
+    pg.background(0);
     pg.noStroke();
     pg.textSize(widthScreen);
     pg.textAlign(LEFT, CENTER);
     pg.textStyle(BOLD)
+    pg.fill(255);
     pg.text(marqueeText, textPosX, height / 2);
     textPosX -= widthScreen / 30;
     if (textPosX < -pg.textWidth(marqueeText)) textPosX = width;
@@ -138,7 +206,7 @@ function draw() {
   }
 
   renderImage();
-  
+
 
 }
 
@@ -146,6 +214,7 @@ function draw() {
 function renderImage() {
   pixelCounter = 0;
   arduinoText = "";
+  arduinoTextCompact = "";
   msg = [];
 
 
@@ -230,34 +299,68 @@ function renderImage() {
       //   warm: `${red(c)},${green(c)},${blue(c)}`,
       //   cold: 2
       // })
-      
+
       // testing for arduino code:
-      if (red(c)==255 && green(c)==255 && blue(c) ==255) c = color(0,0,0);
-      arduinoText += `myObj[${orderNumber-1}].order = ${orderNumber};myObj[${orderNumber-1}].r = ${red(c)};myObj[${orderNumber-1}].g = ${green(c)};myObj[${orderNumber-1}].b = ${blue(c)};\n`
-            
+      if (showMarquee == false) {
+        if (red(c) == 255 && green(c) == 255 && blue(c) == 255) c = color(0, 0, 0);
+      }
+      //arduinoText += `myObj[${orderNumber - 1}].order = ${orderNumber};myObj[${orderNumber - 1}].r = ${red(c)};myObj[${orderNumber - 1}].g = ${green(c)};myObj[${orderNumber - 1}].b = ${blue(c)};\n`
+      arduinoTextCompact += `${red(c)},${green(c)},${blue(c)}+`
 
     }
   }
 
+  //tips:
+  // altijd eindigen met delimeter!
+  // niet teveel Serial.println gebruiken, anders worden niet meer alle correcte waardes doorgegeven.
+  //baudrate 9600 leest tot 81
+  // arduinoTextCompact = `0;0;0|0;0;1|0;0;2|0;0;3|0;0;4|0;0;5|0;0;6|0;0;7|0;0;8|0;0;9|0;0;10|0;0;11|`;
+  // als we 3 getallen voor iedere kleur reserveren als max, kunnen we per keer 7 objecten doorsturen (dit werkte iedere keer, dus is een veilige max, die 84 karakters)
+  // arduinoTextCompact = `100;100;100|100;100;101|100;100;102|100;100;103|100;100;104|100;100;105|100;100;106|`;
+  // serial.write(arduinoTextCompact);    
+
+  //nodig 13 bytes per led
+  //dus in arduino 13x100 --> char buf[1300] nodig
+
+
+  arduinoTextCompact = `<${arduinoTextCompact}>`;
+  // for (let i=0;i<100;i++){
+  //   arduinoTextCompact += `100,100,${nf(i,3)}+`;
+  // }
+
+  // arduinoTextCompact += `>`;
+  console.log(arduinoTextCompact)
+
+
+  serial.write(arduinoTextCompact);
+
   // saveValues(msg)
-  document.querySelector("#output").innerText = arduinoText;
+  // document.querySelector("#output").innerText = arduinoText;
+
+  // navigator.clipboard.writeText(arduinoText).then(function () {
+  //   console.log('Async: Copying to clipboard was successful!');
+  // }, function (err) {
+  //   console.error('Async: Could not copy text: ', err);
+  // });
 }
 
 
-function saveValues(obj){
+function saveValues(obj) {
 
-  function compare( a, b ) {
-    if ( a.order < b.order ){
+  function compare(a, b) {
+    if (a.order < b.order) {
       return -1;
     }
-    if ( a.order > b.order ){
+    if (a.order > b.order) {
       return 1;
     }
     return 0;
   }
 
-  obj.sort( compare );
+  obj.sort(compare);
   document.querySelector("#output").innerText = JSON.stringify(obj, null, 4);
+
+
   //httpGet("http://127.0.0.1/26/on");
 }
 
@@ -271,21 +374,21 @@ function saveValues(obj){
 
 
 
-      // if (lightVersion === "RGB") {
-      //   //fill(hue(c), saturation(c), lightness(c));
-      //   fill(c);
-      // }
-      // if (lightVersion === "WarmCold") {
-      //   colorPixel = color(0, 100, 0);
+// if (lightVersion === "RGB") {
+//   //fill(hue(c), saturation(c), lightness(c));
+//   fill(c);
+// }
+// if (lightVersion === "WarmCold") {
+//   colorPixel = color(0, 100, 0);
 
-      //   if (lightness(pixels[index]) > 10 && lightness(pixels[index]) <= 50) colorPixel = lightWarm;
-      //   if (lightness(pixels[index]) > 50) colorPixel = lightCold;
-      //   fill(colorPixel);
-      // }
+//   if (lightness(pixels[index]) > 10 && lightness(pixels[index]) <= 50) colorPixel = lightWarm;
+//   if (lightness(pixels[index]) > 50) colorPixel = lightCold;
+//   fill(colorPixel);
+// }
 
-      // if (lightVersion === "OnOff") {
+// if (lightVersion === "OnOff") {
 
-      // }
+// }
 
 
 
@@ -296,10 +399,10 @@ function inputMarquee(event) {
 }
 
 function toggleMarquee(event) {
-  
+
 
   marqueeText = input.value();
-    
+
   let label = document.querySelector(`label[for="${event.target.id}"]`);
   if (this.checked()) {
 
@@ -316,6 +419,7 @@ function toggleMarquee(event) {
   }
 
   loop();
+  // noLoop();
   renderImage();
 }
 
@@ -353,8 +457,8 @@ function toggleImage(event) {
     let marquee = document.querySelector(`#toggleMarquee input`);
     if (webcam.checked) webcam.click();
     if (marquee.checked) marquee.click();
-    
-    
+
+
     showImage = true;
     label.innerText = "toggleImage: show"
   } else {
@@ -386,4 +490,34 @@ function changeOrderDirection(event) {
     label.innerText = "orderDirection: vertical"
   }
   renderImage();
+}
+
+// Got the list of ports
+function gotList(thelist) {
+  print("List of Serial Ports:");
+  // theList is an array of their names
+  for (let i = 0; i < thelist.length; i++) {
+    // Display in the console
+    print(i + " " + thelist[i]);
+  }
+}
+
+let teller = 0;
+// Called when there is data available from the serial port
+function gotData() {
+  let currentString = serial.readLine();  // read the incoming data
+  trim(currentString);                    // trim off trailing whitespace
+  if (!currentString) return;             // if the incoming string is empty, do no more
+  console.log(currentString);
+  if (!isNaN(currentString)) {  // make sure the string is a number (i.e. NOT Not a Number (NaN))
+    textXpos = currentString;   // save the currentString to use for the text position in draw()
+  }
+
+
+
+
+
+
+
+
 }
